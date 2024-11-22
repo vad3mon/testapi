@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php-8.2/Dockerfile
+    container_name: testapi-app
+    restart: unless-stopped
+    volumes:
+      - ${APP_VOLUME}:/var/www/html
+    depends_on:
+      - db
+    working_dir: /var/www/html
+    networks:
+      - testapi-network
+    env_file:
+      - .env
+
+  db:
+    image: mysql:latest
+    container_name: testapi-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    networks:
+      - testapi-network
+    env_file:
+      - .env
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    container_name: testapi-nginx
+    restart: unless-stopped
+    volumes:
+      - ${APP_VOLUME}:/var/www/html
+    ports:
+      - "80:80"
+    networks:
+      - testapi-network
+    env_file:
+      - .env
+      
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - testapi-network   
+
+networks:
+  testapi-network:
+    driver: bridge
